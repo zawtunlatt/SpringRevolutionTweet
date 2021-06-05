@@ -1,8 +1,8 @@
 package autotweet;
 
-import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeSet;
 
 public class TelegramTweet {
 	static {
@@ -16,7 +16,7 @@ public class TelegramTweet {
 		if (last_tweeted.isBlank()) {
 			return postDataSet;
 		}
-		Set<PostData> filtered = new HashSet<PostData>();
+		Set<PostData> filtered = new TreeSet<PostData>();
 		for (PostData pd : postDataSet) {
 			int last_tweet_id = Integer.parseInt(last_tweeted.split("/")[1]);
 			int current_tweet_id = Integer.parseInt(pd.getTelegramPostID().split("/")[1]);
