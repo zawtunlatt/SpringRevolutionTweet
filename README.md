@@ -1,4 +1,8 @@
+<h1>Tweet automatically from Click&Tweet Telegram Channel</h1>
+<br>
+https://t.me/mmtweet
 
+<br><br>
 <h2>Environment Requirement :</h2>
 <br>
 လက်ရှိ repository ထဲက <b>chromedriver.exe</b> က ChromeDriver 90.0.4430.24 ဖြစ်ပါတယ်။
@@ -43,6 +47,7 @@ build.bat ကို Run ပြီး Compile လုပ်ပါ။
 <br><br>
 <b>To Do :</b>
  - Code Structure Refactoring for readability,...
+ - Monitor Mass Trending Tags and tweet automatically
  - Supporting for other telegram channels
  - Configuration file supports
  - Command line options (may be 🥱)
