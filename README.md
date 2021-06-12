@@ -42,7 +42,13 @@ Java, Maven ကို Environment Variable Setup လုပ်ပြီးပါ�
 <br>
 build.bat ကို Run ပြီး Compile လုပ်ပါ။
 <br>
-ပြီးပါက run.bat ကို Run ပြီး Program စတင် Run နိုင်ပါပြီ။
+<strike>ပြီးပါက run.bat ကို Run ပြီး Program စတင် Run နိုင်ပါပြီ။</strike>
+<br>
+ပြီးပါက run_without_terminal.bat ကို Run ပြီး Program စတင် Run နိုင်ပါပြီ။
+
+<br><br>
+<b>Known Issue :</b><br>
+ - To fix too much memory usage when the program run for some period.
 
 <br><br>
 <b>To Do :</b>
