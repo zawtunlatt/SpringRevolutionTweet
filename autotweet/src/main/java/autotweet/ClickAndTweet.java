@@ -77,6 +77,7 @@ public class ClickAndTweet extends TelegramTweet{
 	public static void twitterLogin() {
 		ChromeOptions options = new ChromeOptions();
 //		options.addArguments("--headless");
+//		options.addArguments("no-sandbox");
 		driver = new ChromeDriver(options);
 		TwitterUser user = TwitterUser.getDefault();
 		wait = new FluentWait<WebDriver>(driver)
@@ -147,10 +148,10 @@ public class ClickAndTweet extends TelegramTweet{
 			System.out.println("Tweeted : " + data.getTelegramPostID());
 			System.out.println("Remaining Tweet : " + (tweetSet.size() - (index + 1)));
 			Helper.updateLog(data.getTelegramPostID());
+			index++;
 			int delay = 10 + random.nextInt(10);
 			System.out.println("Wait for " + delay + " seconds.");
 			Thread.sleep(delay * 1000);
-			index++;
 		}
 	}
 
