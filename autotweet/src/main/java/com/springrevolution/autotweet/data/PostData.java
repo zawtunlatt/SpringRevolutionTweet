@@ -1,10 +1,31 @@
-package autotweet;
+package com.springrevolution.autotweet.data;
 
 public class PostData implements Comparable<PostData>{
+	
+	private String channelName;
+	
+	private String channelURL;
 	
 	private String telegramPostID;
 	
 	private String twitterURL;
+	
+	
+	public String getChannelName() {
+		return channelName;
+	}
+	
+	public void setChannelName(String channelName) {
+		this.channelName = channelName;
+	}
+	
+	public String getChannelURL() {
+		return channelURL;
+	}
+	
+	public void setChannelURL(String channelURL) {
+		this.channelURL = channelURL;
+	}
 	
 	public String getTelegramPostID() {
 		return telegramPostID;

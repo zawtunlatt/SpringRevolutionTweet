@@ -1,2 +1,2 @@
 :: Start the program
-java -jar "target\autotweet-0.0.1-SNAPSHOT-jar-with-dependencies.jar"
+java -jar "target\autotweet-0.5.1-jar-with-dependencies.jar"

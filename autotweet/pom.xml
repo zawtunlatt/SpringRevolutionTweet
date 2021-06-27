@@ -2,9 +2,9 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.mmrevolution</groupId>
+	<groupId>com.springrevolution</groupId>
 	<artifactId>autotweet</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.5.1</version>
 
 	<properties>
 		<maven.compiler.source>1.8</maven.compiler.source>
@@ -16,6 +16,11 @@
 			<groupId>org.seleniumhq.selenium</groupId>
 			<artifactId>selenium-java</artifactId>
 			<version>3.141.59</version>
+		</dependency>
+		<dependency>
+			<groupId>org.yaml</groupId>
+			<artifactId>snakeyaml</artifactId>
+			<version>1.21</version>
 		</dependency>
 	</dependencies>
 
@@ -45,7 +50,7 @@
 							<archive>
 								<manifest>
 									<mainClass>
-										autotweet.Main
+										com.springrevolution.autotweet.app.Starter
 									</mainClass>
 								</manifest>
 							</archive>
