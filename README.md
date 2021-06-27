@@ -1,6 +1,8 @@
-<h1>Tweet automatically from Click&Tweet Telegram Channel</h1>
+<h1>Tweet automatically from [Click&Tweet] and [2021 Revolution Tweets] Telegram Channel</h1>
 <br>
 https://t.me/mmtweet
+<br>
+https://t.me/s/RevolutionTweets2021
 
 <br><br>
 <h2>Environment Requirement :</h2>
@@ -29,7 +31,8 @@ Maven Download:
 https://maven.apache.org/download.cgi
 
 <br><br>
-twitter-user.txt တွင် User Name, Password ကို နမူနာရေးထားသည့် Format အတိုင်း တလိုင်းစီထည့်ပြီး Save ပါ။
+<h3>Document Updating Required</h3>
+<strike>twitter-user.txt တွင် User Name, Password ကို နမူနာရေးထားသည့် Format အတိုင်း တလိုင်းစီထည့်ပြီး Save ပါ။</strike>
 <br><br>
 (မှတ်ချက်)
 <br>
