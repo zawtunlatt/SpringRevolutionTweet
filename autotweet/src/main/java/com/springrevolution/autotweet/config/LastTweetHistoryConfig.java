@@ -1,4 +1,4 @@
-package com.springrevolution.atuotweet.config;
+package com.springrevolution.autotweet.config;
 
 public class LastTweetHistoryConfig {
 	private String channelURL;

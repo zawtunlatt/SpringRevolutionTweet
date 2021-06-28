@@ -13,7 +13,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.Wait;
 
-import com.springrevolution.atuotweet.config.ChannelConfig;
+import com.springrevolution.autotweet.config.ChannelConfig;
 import com.springrevolution.autotweet.data.PostData;
 import com.springrevolution.autotweet.support.Helper;
 import com.springrevolution.autotweet.support.WebDriverSupporter;

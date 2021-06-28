@@ -10,7 +10,7 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.Wait;
 
-import com.springrevolution.atuotweet.config.AppConfig;
+import com.springrevolution.autotweet.config.AppConfig;
 
 public class WebDriverSupporter {
 	private WebDriver telegramDriver;

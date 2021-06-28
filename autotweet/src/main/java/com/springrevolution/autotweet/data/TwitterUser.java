@@ -1,6 +1,6 @@
 package com.springrevolution.autotweet.data;
 
-import com.springrevolution.atuotweet.config.TwitterUserConfig;
+import com.springrevolution.autotweet.config.TwitterUserConfig;
 
 public class TwitterUser implements Comparable<TwitterUser>{
 

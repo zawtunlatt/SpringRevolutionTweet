@@ -1,4 +1,4 @@
-package com.springrevolution.atuotweet.config;
+package com.springrevolution.autotweet.config;
 
 import java.util.ArrayList;
 import java.util.List;

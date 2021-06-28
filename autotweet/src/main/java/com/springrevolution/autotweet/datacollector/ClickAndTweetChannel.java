@@ -6,7 +6,7 @@ import java.util.Set;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
-import com.springrevolution.atuotweet.config.ChannelConfig;
+import com.springrevolution.autotweet.config.ChannelConfig;
 import com.springrevolution.autotweet.data.PostData;
 import com.springrevolution.autotweet.support.WebDriverSupporter;
 

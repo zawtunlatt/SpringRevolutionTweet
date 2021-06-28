@@ -13,9 +13,9 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.Wait;
 
-import com.springrevolution.atuotweet.config.Configuration;
-import com.springrevolution.atuotweet.config.LastTweetHistoryConfig;
-import com.springrevolution.atuotweet.config.TwitterUserConfig;
+import com.springrevolution.autotweet.config.Configuration;
+import com.springrevolution.autotweet.config.LastTweetHistoryConfig;
+import com.springrevolution.autotweet.config.TwitterUserConfig;
 import com.springrevolution.autotweet.data.PostData;
 import com.springrevolution.autotweet.data.TwitterUser;
 import com.springrevolution.autotweet.support.Helper;

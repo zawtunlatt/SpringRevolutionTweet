@@ -8,9 +8,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import com.springrevolution.atuotweet.config.ChannelConfig;
-import com.springrevolution.atuotweet.config.Configuration;
-import com.springrevolution.atuotweet.config.TwitterUserConfig;
+import com.springrevolution.autotweet.config.ChannelConfig;
+import com.springrevolution.autotweet.config.Configuration;
+import com.springrevolution.autotweet.config.TwitterUserConfig;
 import com.springrevolution.autotweet.data.ChannelTemplate;
 import com.springrevolution.autotweet.data.PostData;
 import com.springrevolution.autotweet.data.TwitterUser;

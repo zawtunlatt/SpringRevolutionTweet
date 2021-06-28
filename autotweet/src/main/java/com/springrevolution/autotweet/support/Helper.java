@@ -12,7 +12,7 @@ import java.util.TimeZone;
 
 import org.yaml.snakeyaml.Yaml;
 
-import com.springrevolution.atuotweet.config.Configuration;
+import com.springrevolution.autotweet.config.Configuration;
 
 public class Helper {
 	private static Map<String, String> monthMap = new HashMap<>();
