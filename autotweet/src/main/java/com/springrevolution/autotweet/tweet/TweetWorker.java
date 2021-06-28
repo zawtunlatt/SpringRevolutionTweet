@@ -117,26 +117,29 @@ public class TweetWorker {
 	}
 	
 	private void updateLastTweet(String channelURL, String postId) {
-		for (TwitterUserConfig user_config : app_config.getTwitterUserList()) {
-			if (user.equals(user_config.convertUser())) {
-				boolean history_found = false;
-				for (LastTweetHistoryConfig last_tweet : user_config.getLastTweetHistory()) {
-					if (channelURL.equals(last_tweet.getChannelURL())) {
-						history_found = true;
-						last_tweet.setLastTweet(postId);
-						break;
+		synchronized (this) {
+			Configuration config = Configuration.loadConfiguration();
+			for (TwitterUserConfig user_config : config.getTwitterUserList()) {
+				if (user.equals(user_config.convertUser())) {
+					boolean history_found = false;
+					for (LastTweetHistoryConfig last_tweet : user_config.getLastTweetHistory()) {
+						if (channelURL.equals(last_tweet.getChannelURL())) {
+							history_found = true;
+							last_tweet.setLastTweet(postId);
+							break;
+						}
 					}
+					if (!history_found) {
+						LastTweetHistoryConfig last_tweet_history = new LastTweetHistoryConfig();
+						last_tweet_history.setChannelURL(channelURL);
+						last_tweet_history.setLastTweet(postId);
+						user_config.getLastTweetHistory().add(last_tweet_history);
+					}
+					break;
 				}
-				if (!history_found) {
-					LastTweetHistoryConfig last_tweet_history = new LastTweetHistoryConfig();
-					last_tweet_history.setChannelURL(channelURL);
-					last_tweet_history.setLastTweet(postId);
-					user_config.getLastTweetHistory().add(last_tweet_history);
-				}
-				break;
 			}
+			Helper.updateConfig(config);	
 		}
-		Helper.updateConfig(app_config);
 	}
 	
 	public void filterTweet(Set<PostData> postDataSet) {
