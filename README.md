@@ -1,6 +1,6 @@
 <h1>Tweet automatically from [Click&Tweet] and [2021 Revolution Tweets] Telegram Channel</h1>
 <br>
-https://t.me/mmtweet
+https://t.me/s/mmtweet
 <br>
 https://t.me/s/RevolutionTweets2021
 
@@ -50,9 +50,10 @@ build.bat ကို Run ပြီး Compile လုပ်ပါ။
 ပြီးပါက run_without_terminal.bat ကို Run ပြီး Program စတင် Run နိုင်ပါပြီ။
 
 <br><br>
+<strike>
 <b>Known Issue :</b><br>
  - To fix too much memory usage when the program run for some period.
-
+</strike>
 <br><br>
 <b>To Do :</b>
  - Code Structure Refactoring for readability,...
