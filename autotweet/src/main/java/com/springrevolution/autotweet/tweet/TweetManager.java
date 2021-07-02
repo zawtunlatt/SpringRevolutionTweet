@@ -8,6 +8,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.springrevolution.autotweet.config.ChannelConfig;
 import com.springrevolution.autotweet.config.Configuration;
 import com.springrevolution.autotweet.config.TwitterUserConfig;
@@ -19,60 +22,79 @@ import com.springrevolution.autotweet.datacollector.TelegramChannel;
 import com.springrevolution.autotweet.support.WebDriverSupporter;
 
 public class TweetManager {
+	private static final Logger LOGGER = LoggerFactory.getLogger(TweetManager.class);
+	
 	public static final int PARALLEL_TWEET_COUNT = 8;
 	public static final List<WebDriverSupporter> DRIVER_SUPPORTER_LIST = new ArrayList<>();
 	static {
-		System.setProperty("webdriver.chrome.driver","chromedriver.exe");
 		Runtime.getRuntime().addShutdownHook(new ShutDownHook());
 	}
 	
 	public Configuration app_config;
-
-	public void tweet() {
+	
+	private List<TweetWorker> workerList = new ArrayList<>();
+	
+	public void prepareEnvironment() {
 		app_config = Configuration.loadConfiguration();
 		if (app_config == null) {
-			System.out.println(String.format("Failed to load %s in app directory!", Configuration.CONFIG_FILE.getName()));
-			System.out.println("Program will exit.");
+			LOGGER.error(String.format("Failed to load %s in app directory!", Configuration.CONFIG_FILE.getName()));
+			LOGGER.error("Program will exit.");
 			System.exit(0);
 		}
 		Set<TwitterUserConfig> user_config_set = new TreeSet<TwitterUserConfig>(app_config.getTwitterUserList());
-
-		ExecutorService es = Executors.newFixedThreadPool(PARALLEL_TWEET_COUNT);
 		int index = 0;
 		for (TwitterUserConfig user_config : user_config_set) {
 			if (!user_config.isTweet()) {
 				continue;
 			}
-			int i = index;
 			TwitterUser user = user_config.convertUser();
-			Set<ChannelConfig> tweet_channel_config_set = new TreeSet<>(user_config.getChannelList());
-			WebDriverSupporter driver_support = new WebDriverSupporter(i, app_config.getAppConfig());
+			WebDriverSupporter driver_support = new WebDriverSupporter(index++, app_config.getAppConfig());
 			DRIVER_SUPPORTER_LIST.add(driver_support);
+			TweetWorker tweet_worker = new TweetWorker(user, driver_support, app_config, this);
+			workerList.add(tweet_worker);
+			try {
+				tweet_worker.loginTwitter();
+			} catch (InterruptedException e) {
+				LOGGER.error(e.getMessage());
+			}
+		}
+	}
+
+	public void tweet() {
+		app_config = Configuration.loadConfiguration();
+		if (app_config == null) {
+			LOGGER.error(String.format("Failed to load %s in app directory!", Configuration.CONFIG_FILE.getName()));
+			LOGGER.error("Program will exit.");
+			System.exit(0);
+		}
+		LOGGER.info("Configuration file loaded");
+
+		ExecutorService es = Executors.newFixedThreadPool(PARALLEL_TWEET_COUNT);
+		int index = 0;
+		for (TweetWorker worker : workerList) {
+			TwitterUser user = worker.getUser();
+			TwitterUserConfig user_config = user.getUserConfig();
+			Set<ChannelConfig> tweet_channel_config_set = new TreeSet<>(user_config.getChannelList());
 			es.execute(() -> {
                 try {
-    				TweetWorker tweet_worker = new TweetWorker(user, driver_support, app_config);
-    				tweet_worker.loginTwitter();
-    				
         			for (ChannelConfig channelConfig : tweet_channel_config_set) {
         				TelegramChannel channel = null;
         				if (channelConfig.getChannelURL().equals(ChannelTemplate.CLICK_AND_TWEET_URL)) {
-        					System.out.println("Click & Tweet Found");
-        					channel = new ClickAndTweetChannel(driver_support, channelConfig);
+        					channel = new ClickAndTweetChannel(worker.getDriverSupport(), channelConfig);
         				} else {
-        					System.out.println("Other Channel Found");
-        					channel = new TelegramChannel(driver_support, channelConfig);
+        					channel = new TelegramChannel(worker.getDriverSupport(), channelConfig);
         				}
             			try {
             				Set<PostData> post_data_set = channel.getTodayPosts();
-            				tweet_worker.tweet(post_data_set);
+            				worker.tweet(post_data_set);
             			} catch (InterruptedException e) {
-            				e.printStackTrace();
+            				LOGGER.error(e.getMessage());
             			} catch (Exception e) {
-            				e.printStackTrace();
+            				LOGGER.error(e.getMessage());
             			}
         			}
                 } catch (Exception e) {
-					e.printStackTrace();
+					LOGGER.error(e.getMessage());
 				}
 			});
 			if (index > 0 && index % 7 == 0) {
@@ -80,16 +102,15 @@ public class TweetManager {
 		        try {
 		            es.awaitTermination(1, TimeUnit.DAYS);
 		        } catch (InterruptedException e) {
-		            e.printStackTrace();
+		            LOGGER.error(e.getMessage());
 		        }
-		        new ShutDownHook().killProcess();
-		        System.out.println("Partial Thread Pool ended");
+//		        new ShutDownHook().killProcess();
+		        LOGGER.info("Partial Thread Pool ended");
 		        try {
-		        	System.out.println("Wait for 7 seconds for next Thread Pool");
+		        	LOGGER.info("Wait for 7 seconds for next Thread Pool");
 					Thread.sleep(1000 * 7);
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					LOGGER.error(e.getMessage());
 				}
 		        es = Executors.newFixedThreadPool(PARALLEL_TWEET_COUNT);
 			}
@@ -99,19 +120,26 @@ public class TweetManager {
         try {
             es.awaitTermination(1, TimeUnit.DAYS);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            LOGGER.error(e.getMessage());
         }
-        new ShutDownHook().start();
+//        new ShutDownHook().start();
 	}
 
+	public List<TweetWorker> getWorkerList() {
+		return workerList;
+	}
+	
+	public void killProcess() {
+		new ShutDownHook().start();;
+	}
 }
 
 
 class ShutDownHook extends Thread {
-	
+	private static final Logger LOGGER = LoggerFactory.getLogger(ShutDownHook.class);
 	public void killProcess () {
 		try {
-			System.out.println("Web Driver will be closing soon.");
+			LOGGER.info("Web Driver will be closed soon.");
 			for (WebDriverSupporter driver_support : TweetManager.DRIVER_SUPPORTER_LIST) {
 				driver_support.getTelegramDriver().close();
 				driver_support.getTelegramDriver().quit();
@@ -120,16 +148,18 @@ class ShutDownHook extends Thread {
 			}
 			TweetManager.DRIVER_SUPPORTER_LIST.clear();
 			Thread.sleep(1000 * 5);
-			Runtime.getRuntime().exec("taskkill /f /im chromedriver.exe /T");
-			Runtime.getRuntime().exec("taskkill /f /im chrome.exe /T");
-			System.out.println("Web Driver closing is Done.");
-		} catch (Exception e1) {
-			System.out.println(e1.getMessage());
+//			Runtime.getRuntime().exec("taskkill /f /im chromedriver.exe /T");
+//			Runtime.getRuntime().exec("taskkill /f /im chrome.exe /T");
+			Runtime.getRuntime().exec("taskkill /f /im geckodriver.exe /T");
+			Runtime.getRuntime().exec("taskkill /f /im firefox.exe /T");
+			LOGGER.info("Web Driver closing is Done.");
+		} catch (Exception e) {
+			LOGGER.error(e.getMessage());
 		}
 	}
 	@Override
 	public void run() {
-		System.out.println("@End");
 		killProcess();
+		LOGGER.info("@Program Ended");
 	}
 }

@@ -6,6 +6,8 @@ public class TwitterUser implements Comparable<TwitterUser>{
 
 	private String username;
 	
+	private String email;
+	
 	private String password;
 	
 	private TwitterUserConfig userConfig;
@@ -16,6 +18,14 @@ public class TwitterUser implements Comparable<TwitterUser>{
 
 	public void setUsername(String username) {
 		this.username = username;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
 	}
 
 	public String getPassword() {

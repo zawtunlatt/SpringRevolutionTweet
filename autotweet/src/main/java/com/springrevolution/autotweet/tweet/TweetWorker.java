@@ -1,5 +1,8 @@
 package com.springrevolution.autotweet.tweet;
 
+import java.io.File;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -9,12 +12,16 @@ import java.util.function.Function;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.Wait;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.springrevolution.autotweet.config.Configuration;
 import com.springrevolution.autotweet.config.LastTweetHistoryConfig;
+import com.springrevolution.autotweet.config.TweetedURLConfig;
 import com.springrevolution.autotweet.config.TwitterUserConfig;
 import com.springrevolution.autotweet.data.PostData;
 import com.springrevolution.autotweet.data.TwitterUser;
@@ -22,128 +29,276 @@ import com.springrevolution.autotweet.support.Helper;
 import com.springrevolution.autotweet.support.WebDriverSupporter;
 
 public class TweetWorker {
+	private static final Logger LOGGER = LoggerFactory.getLogger(TweetWorker.class);
+	public static final Random RANDOM = new Random();
+	private static final File FOLDER = new File("TweetedRecords");	
+	static {
+		if (!FOLDER.exists()) {
+			FOLDER.mkdir();
+		}
+	}
+
 	private final TwitterUser user;
 	private final WebDriver driver;
 	private final Wait<WebDriver> wait;
+	
 	private Set<PostData> tweetSet;
-	private final Configuration app_config;
-	private final List<LastTweetHistoryConfig> history_list;
+	private Configuration app_config;
+	private List<LastTweetHistoryConfig> history_list;	
+	private WebDriverSupporter driverSupport;
+	private TweetedURLConfig tweeted_config = new TweetedURLConfig();
+	private File tweeted_record_file;
+
+	private boolean isLoginedIn = false;
 	
-	public static final Random RANDOM = new Random();
-	
-	public TweetWorker(TwitterUser user, WebDriverSupporter driver_support, Configuration app_config) {
+	public TweetWorker(TwitterUser user, WebDriverSupporter driver_support, Configuration app_config, TweetManager manager) {
 		this.user = user;
+		this.driverSupport = driver_support;
         this.driver = driver_support.getTwitterDriver();
         this.wait = driver_support.getTwitterWait();
         this.app_config = app_config;
         history_list = user.getUserConfig().getLastTweetHistory();
 	}
-	
-	public TwitterUser getTwitterUser(String user_name, String password) {
-        return user;
+
+	private void closeCookieRequest() {
+		// Cookie Message box Button
+		try {
+
+			WebElement el = wait.until(new Function<WebDriver, WebElement>() {
+				String btn_xpath = "/html/body/div/div/div/div[1]/div/div/div/div/div/div[2]";
+				  public WebElement apply(WebDriver drv) {
+				    return drv.findElement(By.xpath(btn_xpath));
+				  }
+				});
+			el.click();
+			LOGGER.info("Close button found and clicked");
+			Thread.sleep(Duration.ofMillis(1500).toMillis());
+		} catch (Exception e) {
+			LOGGER.error(e.getMessage());
+		}
+	}
+	public void loginTwitter() throws InterruptedException {
+		synchronized (this) {
+			if (this.isLoginedIn) {
+				return;
+			}
+			driver.get("https://twitter.com/login");
+			Thread.sleep(Duration.ofSeconds(3).toMillis());
+			closeCookieRequest();
+			
+			if (!tryLogin(user.getUsername())) {
+				// If twitter detect some abnormal login, they request to login with other method
+				try {
+					tryLogin(user.getEmail());
+					this.isLoginedIn = true;
+				} catch (InterruptedException e) {
+					// Trying with Login Fail
+					// Twitter request with different methods like phone number or different dialog.
+				}
+			}
+			while (!isHomeExist()) {
+				LOGGER.info("Home Button not found. Sleep for 2 seconds");
+				Thread.sleep(Duration.ofSeconds(2).toMillis());
+			}
+			LOGGER.info("Login success for [" + user.getUsername() + "]");
+		}
 	}
 	
-	public void loginTwitter() throws InterruptedException {
-		driver.get("https://twitter.com/login");
-		Thread.sleep(1000);
-		WebElement username_input = wait.until(new Function<WebDriver, WebElement>() {
-			String login_title = "//*[@id=\"react-root\"]/div/div/div[2]/main/div/div/div[2]/form/div/div[1]/label/div/div[2]/div/input";
+	private boolean isHomeExist() {
+		
+		boolean homeExist = false;
+		try {
+			wait.until(new Function<WebDriver, WebElement>() {
+				String home_xpath = "/html/body/div/div/div/div[2]/header/div/div/div/div[1]/div[2]/nav/a[1]";
+				  public WebElement apply(WebDriver drv) {
+				    return drv.findElement(By.xpath(home_xpath));
+				  }
+				});
+			homeExist = true;
+		} catch (NoSuchElementException e) {
+			homeExist = false;
+		}
+		return homeExist;
+	}
+	
+	private boolean tryLogin(String userInfo) throws InterruptedException {
+			synchronized (this) {
+				LOGGER.info("Trying to login with : " + userInfo);
+				WebElement userinfo_input = wait.until(new Function<WebDriver, WebElement>() {
+					String user_info_input_xpath = "//*[@id=\"react-root\"]/div/div/div[2]/main/div/div/div[2]/form/div/div[1]/label/div/div[2]/div/input";
+					  public WebElement apply(WebDriver drv) {
+						  return drv.findElement(By.xpath(user_info_input_xpath));
+					  }
+					});
+				for (int i = 0; i < userInfo.length(); i++) {
+					userinfo_input.sendKeys(Character.toString(user.getUsername().charAt(i)));
+					Thread.sleep(Duration.ofMillis(100).toMillis());
+				}
+				Thread.sleep(Duration.ofSeconds(1).toMillis());
+				
+				WebElement password_input = wait.until(new Function<WebDriver, WebElement>() {
+					String password_xpath = "//*[@id=\"react-root\"]/div/div/div[2]/main/div/div/div[2]/form/div/div[2]/label/div/div[2]/div/input";
+					  public WebElement apply(WebDriver drv) {
+						  return drv.findElement(By.xpath(password_xpath));
+					  }
+					});
+				for (int i = 0; i < user.getPassword().length(); i++) {
+					password_input.sendKeys(Character.toString(user.getPassword().charAt(i)));
+					Thread.sleep(Duration.ofMillis(25).toMillis());
+				}
+				Thread.sleep(Duration.ofSeconds(1).toMillis());
+	
+				WebElement login_btn = wait.until(new Function<WebDriver, WebElement>() {
+					String login_btn_xpath = "//*[@id=\"react-root\"]/div/div/div[2]/main/div/div/div[2]/form/div/div[3]/div";
+					  public WebElement apply(WebDriver drv) {
+						  return drv.findElement(By.xpath(login_btn_xpath));
+					  }
+					});
+				login_btn.sendKeys(Keys.ENTER);
+				
+				return isHomeExist();
+			}
+		}
+
+	public synchronized void logout() throws InterruptedException {
+		LOGGER.info("Twitter account -> Logout for [" + user.getUsername() + "]");
+		WebElement popup = wait.until(new Function<WebDriver, WebElement>() {
+			String popup_xpath = "/html/body/div/div/div/div[2]/header/div/div/div/div[2]/div/div";
 			  public WebElement apply(WebDriver drv) {
-				  System.out.println("Waiting : " + (driver == drv));
-			    return driver.findElement(By.xpath(login_title));
+			    return drv.findElement(By.xpath(popup_xpath));
 			  }
 			});
-//		String login_title = "//*[@id=\"react-root\"]/div/div/div[2]/main/div/div/div[2]/form/div/div[1]/label/div/div[2]/div/input";
-//		WebElement username_input = driver.findElement(By.xpath(login_title));
-		for (int i = 0; i < user.getUsername().length(); i++) {
-			username_input.sendKeys(Character.toString(user.getUsername().charAt(i)));
-			Thread.sleep(100);
-		}
-		Thread.sleep(1000);
+		popup.click();
+		Thread.sleep(Duration.ofSeconds(1).toMillis());
 		
-		String password_xpath = "//*[@id=\"react-root\"]/div/div/div[2]/main/div/div/div[2]/form/div/div[2]/label/div/div[2]/div/input"; 
-		WebElement password_input = driver.findElement(By.xpath(password_xpath));
-		password_input.sendKeys(user.getPassword());
+		WebElement logout = wait.until(new Function<WebDriver, WebElement>() {
+			String logout_xpath = "/html/body/div/div/div/div[1]/div[2]/div/div/div[2]/div/div[2]/div/div/div/div/div/a[2]";
+			  public WebElement apply(WebDriver drv) {
+			    return drv.findElement(By.xpath(logout_xpath));
+			  }
+			});
+		logout.click();
+		Thread.sleep(Duration.ofSeconds(1).toMillis());
 		
-		Thread.sleep(2 * 1000);
-
-		String login_btn_xpath = "//*[@id=\"react-root\"]/div/div/div[2]/main/div/div/div[2]/form/div/div[3]/div";
-		WebElement login_btn = driver.findElement(By.xpath(login_btn_xpath));
-		login_btn.sendKeys(Keys.ENTER);
-		
-		Thread.sleep(3 * 1000);
+		WebElement logout_confirm = wait.until(new Function<WebDriver, WebElement>() {
+			String logout_confirm_xpath = "/html/body/div/div/div/div[1]/div[2]/div/div/div/div/div/div[2]/div[2]/div[3]/div[2]";
+			  public WebElement apply(WebDriver drv) {
+			    return drv.findElement(By.xpath(logout_confirm_xpath));
+			  }
+			});
+		logout_confirm.click();
+		Thread.sleep(Duration.ofSeconds(1).toMillis());
 	}
 	
 	public void tweet(Set<PostData> post_data_set) throws InterruptedException {
 		this.tweetSet = post_data_set;
 		filterTweet(this.tweetSet);
-		System.out.println("Start to tweet");
-		System.out.println("Actual Tweet Size : " + tweetSet.size());
+		LOGGER.info("Start to tweet");
+		LOGGER.info("Actual Tweet Size : " + tweetSet.size());
 		if (tweetSet.size() < 1) {
-			System.out.println("No new tweet. Returned ");
+			LOGGER.info("No new tweet found. Returned for " + user.getUsername());
 			return;
 		}
 		for (PostData data : tweetSet) {
-			System.out.println("To tweet : " + data.getTelegramPostID());
+			LOGGER.info("To tweet : " + data.getTelegramPostID());
 		}
-		
+        tweeted_record_file = new File(FOLDER, user.getUsername() + "_" + Helper.dateToTag(2) + ".log");
+        TweetedURLConfig config = tweeted_config.loadConfiguration(tweeted_record_file);
 		int index = 0;
 		for (Iterator<PostData> dataIterator = tweetSet.iterator(); dataIterator.hasNext();) {
+			// Stop app if shutdown signal is found in app configuration.
+			if (handleShutdownSignal()) {
+				return;
+			}
 			PostData data = dataIterator.next();
-			System.out.println("It is time to tweet : " + data.getTelegramPostID());
-			System.out.println("Tweet URL : \n" + data.getTwitterURL());
+			if (config != null) {
+				if (config.getTweetedList().contains(tweeted_config.createTweetedURL(data.getTwitterURL()))) {
+					LOGGER.warn("URL is already found in tweeted records for ");
+					continue;
+				}
+			}
+			LOGGER.info("It is time to tweet : " + data.getTelegramPostID());
+			LOGGER.info("Tweet URL : \n" + data.getTwitterURL());
 			driver.get(data.getTwitterURL());
-//			Thread.sleep(1000 * 4);
+			
 			WebElement tweet_btn = wait.until(new Function<WebDriver, WebElement>() {
 				String tweet_btn_xpath = "/html/body/div/div/div/div[1]/div[2]/div/div/div/div/div/div[2]"
 						+ "/div[2]/div/div[3]/div/div/div/div[1]/div/div/div/div/div[2]/div[3]/div/div/div[2]/div[4]";
 				  public WebElement apply(WebDriver drv) {
-				    return driver.findElement(By.xpath(tweet_btn_xpath));
+				    return drv.findElement(By.xpath(tweet_btn_xpath));
 				  }
 				});
-//			String tweet_btn_xpath = "/html/body/div/div/div/div[1]/div[2]/div/div/div/div/div/div[2]"
-//					+ "/div[2]/div/div[3]/div/div/div/div[1]/div/div/div/div/div[2]/div[3]/div/div/div[2]/div[4]";
-//			WebElement tweet_btn = driver.findElement(By.xpath(tweet_btn_xpath));
 			tweet_btn.click();
-			System.out.println("Tweeted Post: " + data.getTelegramPostID());
-			System.out.println("Tweeted By: [" + user.getUserConfig().getDisplayName() + "] -> for [" + data.getChannelName() + "] Channel");
-			System.out.println("Remaining Tweet : " + (tweetSet.size() - (index + 1)));
+
+			tweeted_config.recordTweetedURL(tweeted_record_file, data.getTwitterURL());
+			LOGGER.info("Tweeted Post: " + data.getTelegramPostID());
+			LOGGER.info("Tweeted By: " + formatInfo(user.getUserConfig().getDisplayName()) + " -> for " + formatInfo(data.getChannelName()) + " Channel");
+			LOGGER.info("Remaining Tweet : " + (tweetSet.size() - (index + 1)));
 			updateLastTweet(data.getChannelURL(), data.getTelegramPostID());
 			index++;
-			int delay = 15 + RANDOM.nextInt(10);
-			System.out.println("Wait for " + delay + " seconds.");
-			Thread.sleep(delay * 1000);
+			int delay = 90 + RANDOM.nextInt(90); // Wait at least 90 seconds to avoid twitter account suspending or temporary limiting some features.
+			LOGGER.info(formatInfo(user.getUsername()) + " is waiting for " + delay + " seconds.");
+			Thread.sleep(Duration.ofSeconds(delay).toMillis());
 		}
 	}
 	
-	private void updateLastTweet(String channelURL, String postId) {
+	private String formatInfo(String info) {
+		return "[" + info + "]";
+	}
+	
+	private boolean handleShutdownSignal() throws InterruptedException {
+		app_config = Configuration.loadConfiguration();
+		if (app_config == null) {
+			LOGGER.error(String.format("Failed to load %s in app directory!", Configuration.CONFIG_FILE.getName()));
+			LOGGER.error("Program will exit.");
+			System.exit(0);
+		} else {
+			if (app_config.getAppConfig().isAppShutdownSignal()) {
+				LOGGER.warn("Shutdown signal is detected by " + user.getUsername());
+				if (isHomeExist()) {
+					logout();
+				}
+				LOGGER.info("Logout OK for " + user.getUsername());
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	private void updateLastTweet(String tweetedChannelURL, String postId) throws InterruptedException {
 		synchronized (this) {
 			Configuration config = Configuration.loadConfiguration();
 			for (TwitterUserConfig user_config : config.getTwitterUserList()) {
 				if (user.equals(user_config.convertUser())) {
 					boolean history_found = false;
-					for (LastTweetHistoryConfig last_tweet : user_config.getLastTweetHistory()) {
-						if (channelURL.equals(last_tweet.getChannelURL())) {
+					history_list = new ArrayList<>();
+					for (LastTweetHistoryConfig last_tweet_history : user_config.getLastTweetHistory()) {
+						history_list.add(last_tweet_history);
+						if (tweetedChannelURL.equals(last_tweet_history.getChannelURL())) {
 							history_found = true;
-							last_tweet.setLastTweet(postId);
+							last_tweet_history.setLastTweet(postId);
 							break;
 						}
 					}
 					if (!history_found) {
 						LastTweetHistoryConfig last_tweet_history = new LastTweetHistoryConfig();
-						last_tweet_history.setChannelURL(channelURL);
+						last_tweet_history.setChannelURL(tweetedChannelURL);
 						last_tweet_history.setLastTweet(postId);
+						history_list.add(last_tweet_history);
 						user_config.getLastTweetHistory().add(last_tweet_history);
+						
 					}
 					break;
 				}
 			}
-			Helper.updateConfig(config);	
+			Helper.updateConfig(config);
+			Thread.sleep(Duration.ofSeconds(1).toMillis());
 		}
 	}
 	
-	public void filterTweet(Set<PostData> postDataSet) {
+	public synchronized void filterTweet(Set<PostData> postDataSet) {
 		if (null == history_list) {
+			LOGGER.info("No History List found for " + user.getUsername());
 			return;
 		}
 		boolean history_found = false;
@@ -169,6 +324,11 @@ public class TweetWorker {
 
 	public TwitterUser getUser() {
 		return user;
+	}
+
+	
+	public WebDriverSupporter getDriverSupport() {
+		return driverSupport;
 	}
 
 	public WebDriver getDriver() {

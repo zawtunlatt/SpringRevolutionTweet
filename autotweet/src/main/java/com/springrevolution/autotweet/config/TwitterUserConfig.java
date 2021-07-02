@@ -10,6 +10,8 @@ public class TwitterUserConfig  implements Comparable<TwitterUserConfig> {
 	
 	private String password;
 	
+	private String email;
+	
 	private String displayName = "Not Set";
 	
 	private boolean tweet = true;
@@ -34,6 +36,14 @@ public class TwitterUserConfig  implements Comparable<TwitterUserConfig> {
 		this.password = password;
 	}
 	
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
 	public String getDisplayName() {
 		return displayName;
 	}
@@ -74,6 +84,7 @@ public class TwitterUserConfig  implements Comparable<TwitterUserConfig> {
 		TwitterUser user = new TwitterUser();
 		user.setUsername(this.getUsername());
 		user.setPassword(this.getPassword());
+		user.setEmail(this.getEmail());
 		user.setUserConfig(this);
 		return user;
 	}

@@ -5,12 +5,15 @@ import java.util.Set;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.springrevolution.autotweet.config.ChannelConfig;
 import com.springrevolution.autotweet.data.PostData;
 import com.springrevolution.autotweet.support.WebDriverSupporter;
 
 public class ClickAndTweetChannel extends TelegramChannel{
+	private static final Logger LOGGER = LoggerFactory.getLogger(ClickAndTweetChannel.class);
 	
 	public ClickAndTweetChannel(WebDriverSupporter driver_support, ChannelConfig channelConfig) {
 		super(driver_support, channelConfig);

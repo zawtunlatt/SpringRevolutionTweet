@@ -12,13 +12,17 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.Wait;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.springrevolution.autotweet.config.ChannelConfig;
 import com.springrevolution.autotweet.data.PostData;
 import com.springrevolution.autotweet.support.Helper;
 import com.springrevolution.autotweet.support.WebDriverSupporter;
+import com.springrevolution.autotweet.tweet.TweetWorker;
 
 public class TelegramChannel {
+	private static final Logger LOGGER = LoggerFactory.getLogger(TelegramChannel.class);
 	
 	protected String channelName;
 	
@@ -37,7 +41,7 @@ public class TelegramChannel {
 	public synchronized Set<PostData> getTodayPosts() throws InterruptedException {
 		Set<PostData> postDataSet = new TreeSet<>();
 		String url = channelURL + "?q=" + Helper.dateToTag(1).replace("#", "%23");
-		System.out.println(url);
+		LOGGER.info(url);
 		driver.get(url);
 		Thread.sleep(2000);
 //		List<WebElement> elements = driver.findElements(By.cssSelector(".tgme_widget_message.js-widget_message"));
@@ -46,11 +50,12 @@ public class TelegramChannel {
 			    return driver.findElements(By.cssSelector(".tgme_widget_message.js-widget_message"));
 			  }
 			});
-		System.out.println("Pattern 1 Size : " + elements.size());
+
+		LOGGER.info("Pattern 1 Size : " + elements.size());
 		collectPostData(elements, postDataSet);
 
 		url = channelURL + "?q=" + Helper.dateToTag(2).replace("#", "%23");
-		System.out.println(url);
+		LOGGER.info(url);
 		driver.get(url);
 		Thread.sleep(2000);
 //		elements = driver.findElements(By.cssSelector(".tgme_widget_message.js-widget_message"));
@@ -59,7 +64,7 @@ public class TelegramChannel {
 			    return driver.findElements(By.cssSelector(".tgme_widget_message.js-widget_message"));
 			  }
 			});
-		System.out.println("Pattern 2 Size : " + elements.size());
+		LOGGER.info("Pattern 2 Size : " + elements.size());
 		collectPostData(elements, postDataSet);
 		return postDataSet;
 	}

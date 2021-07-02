@@ -1,30 +1,36 @@
-!!com.springrevolution.atuotweet.config.Configuration
+!!com.springrevolution.autotweet.config.Configuration
+
 appConfig:
+  appShutdownSignal: true
   massTrendingChannel: {channelName: Mass Trending, channelURL: 'https://t.me/s/masstrending'}
   massTrendingTag: ''
   showTelegramUI: false
   showTwitterUI: true
 
-telegramChannelList: &id001
+telegramChannelList:
 - {channelName: ClickAndTweet, channelURL: 'https://t.me/s/mmtweet'}
 - {channelName: 2021 Revolution Tweets, channelURL: 'https://t.me/s/RevolutionTweets2021'}
 
 twitterUserList:
 
-- channelList: *id001
-  displayName: Kozuki Oden
+- channelList:
+  - {channelName: ClickAndTweet, channelURL: 'https://t.me/s/mmtweet'}
+  displayName: Kozuki Oden (Optional)
+  email: $youremail@blahblah.com
   lastTweetHistory:
-  - {channelURL: 'https://t.me/s/mmtweet', lastTweet: mmtweet/27649}
-  - {channelURL: 'https://t.me/s/RevolutionTweets2021', lastTweet: RevolutionTweets2021/58618}
+  - {channelURL: 'https://t.me/s/mmtweet', lastTweet: mmtweet/29074}
+  - {channelURL: 'https://t.me/s/RevolutionTweets2021', lastTweet: RevolutionTweets2021/59015}
   password: $YourPassword
   tweet: true
-  username: $YourUserName
-  
-- channelList: *id001
-  displayName: Kozuki Toki
+  username: $YourTwitterUserName
+
+- channelList:
+  - {channelName: 2021 Revolution Tweets, channelURL: 'https://t.me/s/RevolutionTweets2021'}
+  displayName: Kozuki Toki (Optional)
+  email: $youremail@blahblah.com
   lastTweetHistory:
   - {channelURL: 'https://t.me/s/mmtweet', lastTweet: mmtweet/27649}
-  - {channelURL: 'https://t.me/s/RevolutionTweets2021', lastTweet: RevolutionTweets2021/58618}
+  - {channelURL: 'https://t.me/s/RevolutionTweets2021', lastTweet: RevolutionTweets2021/60415}
   password: $YourPassword
   tweet: true
-  username: $YourUserName
+  username: $YourTwitterUserName

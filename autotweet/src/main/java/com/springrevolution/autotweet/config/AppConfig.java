@@ -8,6 +8,8 @@ public class AppConfig {
 	private boolean showTelegramUI = false;
 	
 	private boolean showTwitterUI = true;
+	
+	private boolean appShutdownSignal = false;
 
 	public ChannelConfig getMassTrendingChannel() {
 		return massTrendingChannel;
@@ -40,6 +42,13 @@ public class AppConfig {
 	public void setShowTwitterUI(boolean showTwitterUI) {
 		this.showTwitterUI = showTwitterUI;
 	}
-	
+
+	public boolean isAppShutdownSignal() {
+		return appShutdownSignal;
+	}
+
+	public void setAppShutdownSignal(boolean appShutdownSignal) {
+		this.appShutdownSignal = appShutdownSignal;
+	}
 	
 }

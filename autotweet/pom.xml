@@ -4,11 +4,12 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.springrevolution</groupId>
 	<artifactId>autotweet</artifactId>
-	<version>0.5.1</version>
+	<version>0.5.5</version>
 
 	<properties>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
+		<org.slf4j-version>1.7.6</org.slf4j-version>
 	</properties>
 
 	<dependencies>
@@ -21,6 +22,24 @@
 			<groupId>org.yaml</groupId>
 			<artifactId>snakeyaml</artifactId>
 			<version>1.21</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${org.slf4j-version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jcl-over-slf4j</artifactId>
+			<version>${org.slf4j-version}</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>${org.slf4j-version}</version>
+			<scope>runtime</scope>
 		</dependency>
 	</dependencies>
 
