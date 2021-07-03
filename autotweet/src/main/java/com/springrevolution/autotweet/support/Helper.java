@@ -11,12 +11,16 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 import com.springrevolution.autotweet.config.Configuration;
+import com.springrevolution.autotweet.tweet.TweetWorker;
 
 public class Helper {
 	private static Map<String, String> monthMap = new HashMap<>();
+	private static final Logger LOGGER = LoggerFactory.getLogger(Helper.class);
 	static {
 		monthMap.put("Jan", "Jan");
 		monthMap.put("Feb", "Feb");
@@ -68,7 +72,7 @@ public class Helper {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	    System.out.println("Configuration Updated.");
+	    LOGGER.info("Configuration Updated.");
 	}
 	
 	public static void webDriverWait() {
