@@ -87,6 +87,7 @@ public class TweetWorker {
 			return;
 		}
 		driver.get("https://twitter.com/login");
+//		driver.get("https://twitter.com/i/flow/login");
 		Thread.sleep(Duration.ofSeconds(3).toMillis());
 		LOGGER.info("Current URL: " + driver.getCurrentUrl());
 		if (driver.getCurrentUrl().equals("https://twitter.com/i/flow/login")) {
@@ -117,7 +118,7 @@ public class TweetWorker {
 		try {
 			LOGGER.info("Trying to login with : " + userInfo);
 			WebElement userinfo_input = wait.until(new Function<WebDriver, WebElement>() {
-				String user_info_input_xpath = "//*[@id=\"react-root\"]/div/div/div[2]/main/div/div/div/div[2]/div[2]/div[1]/div/div[2]/label/div/div[2]/div/input";
+				String user_info_input_xpath = "//*[@id=\"layers\"]/div[2]/div/div/div/div/div/div[2]/div[2]/div/div/div[2]/div[2]/div[1]/div/div[2]/label/div/div[2]/div/input";
 				public WebElement apply(WebDriver drv) {
 					return drv.findElement(By.xpath(user_info_input_xpath));
 				}
@@ -285,7 +286,7 @@ public class TweetWorker {
 			PostData data = dataIterator.next();
 			if (config != null) {
 				if (config.getTweetedList().contains(tweeted_config.createTweetedURL(data.getTwitterURL()))) {
-					LOGGER.warn("URL is already found in tweeted records for ");
+					LOGGER.warn("URL is already found in tweeted records for " + user.getUsername());
 					continue;
 				}
 			}

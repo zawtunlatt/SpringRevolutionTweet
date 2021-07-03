@@ -1,5 +1,6 @@
 package com.springrevolution.autotweet.app;
 
+import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -24,9 +25,9 @@ public class Starter {
 				try {
 					// Wait for 15 minutes
 					int duration_min = 15;
-					LOGGER.info("Wait for " + duration_min + " minutes for next tweet");
+					LOGGER.info("Wait " + duration_min + " minutes for next tweet");
 					LOGGER.info("Press Ctrl+C to stop program. :D");
-					Thread.sleep(duration_min * 1000 * 60);
+					Thread.sleep(Duration.ofMinutes(duration_min).toMillis());
 					LOGGER.info("Time to tweet again.");
 				} catch (InterruptedException e) {
 					e.printStackTrace();

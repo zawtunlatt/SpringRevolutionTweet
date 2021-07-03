@@ -69,12 +69,12 @@ public class WebDriverSupporter {
 
 		
 		telegramWait = new FluentWait<WebDriver>(telegramDriver)
-				  .withTimeout(Duration.ofSeconds(30))
+				  .withTimeout(Duration.ofSeconds(20))
 				  .pollingEvery(Duration.ofMillis(1500))
 				  .ignoring(NoSuchElementException.class);
 		
 		twitterWait = new FluentWait<WebDriver>(twitterDriver)
-				  .withTimeout(Duration.ofSeconds(30))
+				  .withTimeout(Duration.ofSeconds(20))
 				  .pollingEvery(Duration.ofMillis(1000))
 				  .ignoring(NoSuchElementException.class);
 	}
