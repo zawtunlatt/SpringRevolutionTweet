@@ -1,14 +1,20 @@
 package com.springrevolution.autotweet.app;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.springrevolution.autotweet.config.Configuration;
 import com.springrevolution.autotweet.tweet.TweetManager;
+import com.springrevolution.autotweet.tweet.TweetWorker;
 
 public class Starter {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Starter.class);
 	public static void main(String[] args) {
+		LOGGER.info("Application is started");
 		boolean needToSleep = false;
 		TweetManager tweetManager = new TweetManager();
 		tweetManager.prepareEnvironment();
@@ -43,6 +49,24 @@ public class Starter {
 			System.exit(0);
 		} else {
 			if (app_config.getAppConfig().isAppShutdownSignal()) {
+				ExecutorService es = Executors.newFixedThreadPool(manager.getWorkerList().size());
+				for (TweetWorker worker : manager.getWorkerList()) {
+					if (worker.isHomeExist()) {
+						es.execute(() -> {
+							try {
+								worker.logout();
+							} catch (InterruptedException e) {
+								LOGGER.error(e.getMessage() + " -> " + worker.getUser().getUsername());
+							}							
+						});
+					}
+				}
+				es.shutdown();
+				try {
+					es.awaitTermination(10, TimeUnit.SECONDS);
+				} catch (InterruptedException e) {
+					LOGGER.error(e.getMessage());
+				}
 				manager.killProcess();
 				return true;
 			}

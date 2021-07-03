@@ -1,5 +1,6 @@
 package com.springrevolution.autotweet.tweet;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -8,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.openqa.selenium.WebDriverException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,20 +45,42 @@ public class TweetManager {
 		}
 		Set<TwitterUserConfig> user_config_set = new TreeSet<TwitterUserConfig>(app_config.getTwitterUserList());
 		int index = 0;
+		ExecutorService es = Executors.newFixedThreadPool(PARALLEL_TWEET_COUNT);
 		for (TwitterUserConfig user_config : user_config_set) {
 			if (!user_config.isTweet()) {
 				continue;
 			}
-			TwitterUser user = user_config.convertUser();
-			WebDriverSupporter driver_support = new WebDriverSupporter(index++, app_config.getAppConfig());
-			DRIVER_SUPPORTER_LIST.add(driver_support);
-			TweetWorker tweet_worker = new TweetWorker(user, driver_support, app_config, this);
-			workerList.add(tweet_worker);
-			try {
-				tweet_worker.loginTwitter();
-			} catch (InterruptedException e) {
-				LOGGER.error(e.getMessage());
-			}
+			int i = index++;
+			es.execute(() -> {
+				TwitterUser user = user_config.convertUser();
+				WebDriverSupporter driver_support = null;
+				TweetWorker tweet_worker = null;
+				while (tweet_worker == null) {
+					driver_support = new WebDriverSupporter(i, app_config.getAppConfig());
+					tweet_worker = new TweetWorker(user, driver_support, app_config, this);
+					try {
+						LOGGER.info(user.getUsername() + " is waiting web driver for 5 seconds");
+						Thread.sleep(Duration.ofSeconds(5).toMillis());
+						tweet_worker.loginTwitter();
+					} catch (InterruptedException e) {
+						LOGGER.error(e.getMessage());
+					} catch (WebDriverException e) {
+						driver_support.getTelegramDriver().close();
+						driver_support.getTelegramDriver().quit();
+						driver_support.getTwitterDriver().close();
+						driver_support.getTwitterDriver().quit();
+						tweet_worker = null;
+					}
+				}
+				DRIVER_SUPPORTER_LIST.add(driver_support);
+				workerList.add(tweet_worker);
+			});
+		}
+		es.shutdown();
+		try {
+			es.awaitTermination(30, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			LOGGER.error("Error occured during login");
 		}
 	}
 
@@ -140,16 +164,16 @@ class ShutDownHook extends Thread {
 	public void killProcess () {
 		try {
 			LOGGER.info("Web Driver will be closed soon.");
-			for (WebDriverSupporter driver_support : TweetManager.DRIVER_SUPPORTER_LIST) {
-				driver_support.getTelegramDriver().close();
-				driver_support.getTelegramDriver().quit();
-				driver_support.getTwitterDriver().close();
-				driver_support.getTwitterDriver().quit();
-			}
+//			for (WebDriverSupporter driver_support : TweetManager.DRIVER_SUPPORTER_LIST) {
+//				driver_support.getTelegramDriver().close();
+//				driver_support.getTelegramDriver().quit();
+//				driver_support.getTwitterDriver().close();
+//				driver_support.getTwitterDriver().quit();
+//			}
+//			Thread.sleep(1000 * 5);
 			TweetManager.DRIVER_SUPPORTER_LIST.clear();
-			Thread.sleep(1000 * 5);
-//			Runtime.getRuntime().exec("taskkill /f /im chromedriver.exe /T");
-//			Runtime.getRuntime().exec("taskkill /f /im chrome.exe /T");
+			Runtime.getRuntime().exec("taskkill /f /im chromedriver.exe /T");
+			Runtime.getRuntime().exec("taskkill /f /im chrome.exe /T");
 			Runtime.getRuntime().exec("taskkill /f /im geckodriver.exe /T");
 			Runtime.getRuntime().exec("taskkill /f /im firefox.exe /T");
 			LOGGER.info("Web Driver closing is Done.");
