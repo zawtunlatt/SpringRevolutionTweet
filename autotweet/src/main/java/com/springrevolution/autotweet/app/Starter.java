@@ -22,6 +22,9 @@ public class Starter {
 		while (true) {
 			TweetManager.DRIVER_SUPPORTER_LIST.clear();
 			if (needToSleep) {
+				if (handleShutdownSignal(tweetManager)) {
+					break;
+				}
 				try {
 					// Wait for 15 minutes
 					int duration_min = 15;
@@ -36,9 +39,6 @@ public class Starter {
 			}
 			needToSleep = true;
 			tweetManager.tweet();
-			if (handleShutdownSignal(tweetManager)) {
-				break;
-			}
 		}
 	}
 	
@@ -50,6 +50,7 @@ public class Starter {
 			System.exit(0);
 		} else {
 			if (app_config.getAppConfig().isAppShutdownSignal()) {
+				LOGGER.info("Shutdown Signal is detected in app config.");
 				ExecutorService es = Executors.newFixedThreadPool(manager.getWorkerList().size());
 				for (TweetWorker worker : manager.getWorkerList()) {
 					if (worker.isHomeExist()) {

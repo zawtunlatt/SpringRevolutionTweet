@@ -45,43 +45,45 @@ public class TweetManager {
 		}
 		Set<TwitterUserConfig> user_config_set = new TreeSet<TwitterUserConfig>(app_config.getTwitterUserList());
 		int index = 0;
-		ExecutorService es = Executors.newFixedThreadPool(PARALLEL_TWEET_COUNT);
 		for (TwitterUserConfig user_config : user_config_set) {
 			if (!user_config.isTweet()) {
 				continue;
 			}
-			int i = index++;
-			es.execute(() -> {
-				TwitterUser user = user_config.convertUser();
-				WebDriverSupporter driver_support = null;
-				TweetWorker tweet_worker = null;
-				while (tweet_worker == null) {
-					driver_support = new WebDriverSupporter(i, app_config.getAppConfig());
-					tweet_worker = new TweetWorker(user, driver_support, app_config, this);
-					try {
-						LOGGER.info(user.getUsername() + " is waiting web driver for 5 seconds");
-						Thread.sleep(Duration.ofSeconds(5).toMillis());
-						tweet_worker.loginTwitter();
-					} catch (InterruptedException e) {
-						LOGGER.error(e.getMessage());
-					} catch (WebDriverException e) {
-						driver_support.getTelegramDriver().close();
-						driver_support.getTelegramDriver().quit();
-						driver_support.getTwitterDriver().close();
-						driver_support.getTwitterDriver().quit();
+			TwitterUser user = user_config.convertUser();
+			WebDriverSupporter driver_support = null;
+			TweetWorker tweet_worker = null;
+			while (tweet_worker == null) {
+				driver_support = new WebDriverSupporter(index, app_config.getAppConfig());
+				tweet_worker = new TweetWorker(user, driver_support, app_config, this);
+				try {
+					LOGGER.info(user.getUsername() + " is waiting web driver for 5 seconds");
+					Thread.sleep(Duration.ofSeconds(5).toMillis());
+					boolean loggedInOK = tweet_worker.loginTwitter();
+					if (!loggedInOK) {
+						cleanWebDriver(driver_support);
 						tweet_worker = null;
 					}
+				} catch (InterruptedException e) {
+					LOGGER.error(e.getMessage());
+				} catch (WebDriverException e) {
+					cleanWebDriver(driver_support);
+					tweet_worker = null;
 				}
-				DRIVER_SUPPORTER_LIST.add(driver_support);
-				workerList.add(tweet_worker);
-			});
+				if (tweet_worker == null) {
+					LOGGER.warn("Login Failed! Program is trying again to login for [" + user.getUsername() + "]");
+				}
+			}
+			DRIVER_SUPPORTER_LIST.add(driver_support);
+			workerList.add(tweet_worker);
+			index++;
 		}
-		es.shutdown();
-		try {
-			es.awaitTermination(30, TimeUnit.SECONDS);
-		} catch (InterruptedException e) {
-			LOGGER.error("Error occured during login");
-		}
+	}
+	
+	private void cleanWebDriver(WebDriverSupporter driver_support) {
+		driver_support.getTelegramDriver().close();
+		driver_support.getTelegramDriver().quit();
+		driver_support.getTwitterDriver().close();
+		driver_support.getTwitterDriver().quit();
 	}
 
 	public void tweet() {

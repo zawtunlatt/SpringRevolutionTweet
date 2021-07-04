@@ -51,7 +51,7 @@ public class TweetWorker {
 	private TweetedURLConfig tweeted_config = new TweetedURLConfig();
 	private File tweeted_record_file;
 
-	private boolean isLoginedIn = false;
+	private boolean isLoggedIn = false;
 
 	public TweetWorker(TwitterUser user, WebDriverSupporter driver_support, Configuration app_config,
 			TweetManager manager) {
@@ -82,23 +82,24 @@ public class TweetWorker {
 		}
 	}
 
-	public void loginTwitter() throws InterruptedException, WebDriverException {
-		if (this.isLoginedIn) {
-			return;
+	public boolean loginTwitter() throws InterruptedException, WebDriverException {
+		if (this.isLoggedIn) {
+			return true;
 		}
 		driver.get("https://twitter.com/login");
 //		driver.get("https://twitter.com/i/flow/login");
 		Thread.sleep(Duration.ofSeconds(3).toMillis());
 		LOGGER.info("Current URL: " + driver.getCurrentUrl());
 		if (driver.getCurrentUrl().equals("https://twitter.com/i/flow/login")) {
-			tryLoginMethod1(user.getUsername());
+			this.isLoggedIn = tryLoginMethod1(user.getUsername());
 		} else if (driver.getCurrentUrl().equals("https://twitter.com/login")) {
-			if (!tryLoginMethod2(user.getUsername())) {
+			if (tryLoginMethod2(user.getUsername())) {
+				this.isLoggedIn = true;
+			} else {
 				// If twitter detect some abnormal login, they request to login with other
 				// method
 				try {
-					tryLoginMethod2(user.getEmail());
-					this.isLoginedIn = true;
+					this.isLoggedIn = tryLoginMethod2(user.getEmail());
 				} catch (InterruptedException e) {
 					// Trying with Login Fail
 					// Twitter request with different methods like phone number or different dialog.
@@ -107,11 +108,14 @@ public class TweetWorker {
 		}
 		closeCookieRequest();
 
-		while (!isHomeExist()) {
-			LOGGER.info("Home Button not found. Sleep for 2 seconds");
-			Thread.sleep(Duration.ofSeconds(2).toMillis());
+		if (this.isLoggedIn) {
+			LOGGER.info("Login Success:  For " + formatInfo(user.getUsername()));
+			return true;
+		} else {
+			LOGGER.info("Login Fail:  For " + formatInfo(user.getUsername()));
+			return false;
 		}
-		LOGGER.info("Login success for [" + user.getUsername() + "]");
+
 	}
 
 	private boolean tryLoginMethod1(String userInfo) throws WebDriverException, InterruptedException {
@@ -119,6 +123,7 @@ public class TweetWorker {
 			LOGGER.info("Trying to login with : " + userInfo);
 			WebElement userinfo_input = wait.until(new Function<WebDriver, WebElement>() {
 				String user_info_input_xpath = "//*[@id=\"layers\"]/div[2]/div/div/div/div/div/div[2]/div[2]/div/div/div[2]/div[2]/div[1]/div/div[2]/label/div/div[2]/div/input";
+
 				public WebElement apply(WebDriver drv) {
 					return drv.findElement(By.xpath(user_info_input_xpath));
 				}
@@ -128,31 +133,33 @@ public class TweetWorker {
 				Thread.sleep(Duration.ofMillis(100).toMillis());
 			}
 			Thread.sleep(Duration.ofSeconds(1).toMillis());
-			
+
 			WebElement next_btn = wait.until(new Function<WebDriver, WebElement>() {
 				String nextButton_xpath = "//*[@id=\"layers\"]/div[2]/div/div/div/div/div/div[2]/div[2]/div/div/div[2]/div[2]/div[2]/div";
+
 				public WebElement apply(WebDriver drv) {
 					return drv.findElement(By.xpath(nextButton_xpath));
 				}
 			});
 			next_btn.click();
 			Thread.sleep(Duration.ofSeconds(2).toMillis());
-			
-			
+
 			WebElement password_input_btn = wait.until(new Function<WebDriver, WebElement>() {
 				String password_input_xpath = "//*[@id=\"layers\"]/div[2]/div/div/div/div/div/div[2]/div[2]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/label/div/div[2]/div/input";
+
 				public WebElement apply(WebDriver drv) {
 					return drv.findElement(By.xpath(password_input_xpath));
 				}
 			});
-			
+
 			for (int i = 0; i < user.getPassword().length(); i++) {
 				password_input_btn.sendKeys(Character.toString(user.getPassword().charAt(i)));
 				Thread.sleep(Duration.ofMillis(25).toMillis());
 			}
-			
+
 			WebElement login_btn = wait.until(new Function<WebDriver, WebElement>() {
 				String login_xpath = "//*[@id=\"layers\"]/div[2]/div/div/div/div/div/div[2]/div[2]/div/div/div[2]/div[2]/div[2]/div";
+
 				public WebElement apply(WebDriver drv) {
 					return drv.findElement(By.xpath(login_xpath));
 				}
@@ -176,7 +183,7 @@ public class TweetWorker {
 				}
 			});
 			for (int i = 0; i < userInfo.length(); i++) {
-				userinfo_input.sendKeys(Character.toString(user.getUsername().charAt(i)));
+				userinfo_input.sendKeys(Character.toString(userInfo.charAt(i)));
 				Thread.sleep(Duration.ofMillis(100).toMillis());
 			}
 			Thread.sleep(Duration.ofSeconds(1).toMillis());
@@ -215,6 +222,7 @@ public class TweetWorker {
 		try {
 			wait.until(new Function<WebDriver, WebElement>() {
 				String home_xpath = "/html/body/div/div/div/div[2]/header/div/div/div/div[1]/div[2]/nav/a[1]";
+
 				public WebElement apply(WebDriver drv) {
 					return drv.findElement(By.xpath(home_xpath));
 				}
@@ -278,10 +286,17 @@ public class TweetWorker {
 		tweeted_record_file = new File(FOLDER, user.getUsername() + "_" + Helper.dateToTag(2) + ".log");
 		TweetedURLConfig config = tweeted_config.loadConfiguration(tweeted_record_file);
 		int index = 0;
+		boolean waiting_required = false;
 		for (Iterator<PostData> dataIterator = tweetSet.iterator(); dataIterator.hasNext();) {
 			// Stop app if shutdown signal is found in app configuration.
 			if (handleShutdownSignal()) {
 				return;
+			}
+			if (waiting_required) {
+				int delay = 90 + RANDOM.nextInt(90); // Wait at least 90 seconds to avoid twitter account suspending or
+				// temporary limiting some features.
+				LOGGER.info(formatInfo(user.getUsername()) + " is waiting for " + delay + " seconds.");
+				Thread.sleep(Duration.ofSeconds(delay).toMillis());
 			}
 			PostData data = dataIterator.next();
 			if (config != null) {
@@ -297,6 +312,7 @@ public class TweetWorker {
 			WebElement tweet_btn = wait.until(new Function<WebDriver, WebElement>() {
 				String tweet_btn_xpath = "/html/body/div/div/div/div[1]/div[2]/div/div/div/div/div/div[2]"
 						+ "/div[2]/div/div[3]/div/div/div/div[1]/div/div/div/div/div[2]/div[3]/div/div/div[2]/div[4]";
+
 				public WebElement apply(WebDriver drv) {
 					return drv.findElement(By.xpath(tweet_btn_xpath));
 				}
@@ -310,10 +326,7 @@ public class TweetWorker {
 			LOGGER.info("Remaining Tweet : " + (tweetSet.size() - (index + 1)));
 			updateLastTweet(data);
 			index++;
-			int delay = 90 + RANDOM.nextInt(90); // Wait at least 90 seconds to avoid twitter account suspending or
-													// temporary limiting some features.
-			LOGGER.info(formatInfo(user.getUsername()) + " is waiting for " + delay + " seconds.");
-			Thread.sleep(Duration.ofSeconds(delay).toMillis());
+			waiting_required = true;
 		}
 	}
 
