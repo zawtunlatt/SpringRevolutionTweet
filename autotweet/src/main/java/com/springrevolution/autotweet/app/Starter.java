@@ -20,7 +20,18 @@ public class Starter {
 		TweetManager tweetManager = new TweetManager();
 		tweetManager.prepareEnvironment();
 		while (true) {
-			TweetManager.DRIVER_SUPPORTER_LIST.clear();
+			if (tweetManager.isWebDriverRestartRequired()) {
+				LOGGER.info("Twitter accounts will be logged out.");
+				logout(tweetManager);
+				LOGGER.info("Twitter accounts have been logged out.");
+				LOGGER.info("Web Browsers will be restarted");
+				tweetManager.quitWebDriver();
+				LOGGER.info("Web Browser closing was completed.");
+				
+				tweetManager.prepareEnvironment();
+				tweetManager.setWebDriverRestartRequired(false);
+			}
+			
 			if (needToSleep) {
 				if (handleShutdownSignal(tweetManager)) {
 					break;
@@ -30,7 +41,11 @@ public class Starter {
 					int duration_min = 15;
 					LOGGER.info("Wait " + duration_min + " minutes for next tweet");
 					LOGGER.info("Press Ctrl+C to stop program. :D");
-					Thread.sleep(Duration.ofMinutes(duration_min).toMillis());
+					for (float i = 0; i < duration_min; i += 0.5) {
+						Thread.sleep(Duration.ofSeconds(30).toMillis());
+						float rem = (float) (duration_min - (i + 0.5));
+						LOGGER.info(rem + " minutes remaining for next tweet");
+					}
 					LOGGER.info("Time to tweet again.");
 				} catch (InterruptedException e) {
 					e.printStackTrace();
@@ -42,6 +57,26 @@ public class Starter {
 		}
 	}
 	
+	private static void logout(TweetManager manager) {
+		ExecutorService es = Executors.newFixedThreadPool(manager.getWorkerList().size());
+		for (TweetWorker worker : manager.getWorkerList()) {
+			if (worker.isHomeExist()) {
+				es.execute(() -> {
+					try {
+						worker.logout();
+					} catch (InterruptedException e) {
+						LOGGER.error(e.getMessage() + " -> " + worker.getUser().getUsername());
+					}							
+				});
+			}
+		}
+		es.shutdown();
+		try {
+			es.awaitTermination(10, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			LOGGER.error(e.getMessage());
+		}
+	}
 	private static boolean handleShutdownSignal(TweetManager manager) {
 		Configuration app_config = Configuration.loadConfiguration();
 		if (app_config == null) {
@@ -51,25 +86,8 @@ public class Starter {
 		} else {
 			if (app_config.getAppConfig().isAppShutdownSignal()) {
 				LOGGER.info("Shutdown Signal is detected in app config.");
-				ExecutorService es = Executors.newFixedThreadPool(manager.getWorkerList().size());
-				for (TweetWorker worker : manager.getWorkerList()) {
-					if (worker.isHomeExist()) {
-						es.execute(() -> {
-							try {
-								worker.logout();
-							} catch (InterruptedException e) {
-								LOGGER.error(e.getMessage() + " -> " + worker.getUser().getUsername());
-							}							
-						});
-					}
-				}
-				es.shutdown();
-				try {
-					es.awaitTermination(10, TimeUnit.SECONDS);
-				} catch (InterruptedException e) {
-					LOGGER.error(e.getMessage());
-				}
-				manager.killProcess();
+				logout(manager);
+				manager.stopProgram();
 				return true;
 			}
 		}

@@ -36,6 +36,8 @@ public class TweetManager {
 	
 	private List<TweetWorker> workerList = new ArrayList<>();
 	
+	private boolean isWebDriverRestartRequired = false;
+	
 	public void prepareEnvironment() {
 		app_config = Configuration.loadConfiguration();
 		if (app_config == null) {
@@ -53,11 +55,13 @@ public class TweetManager {
 			WebDriverSupporter driver_support = null;
 			TweetWorker tweet_worker = null;
 			while (tweet_worker == null) {
+				LOGGER.info("APP is trying to start Web Browser for " + user.getUsername());
 				driver_support = new WebDriverSupporter(index, app_config.getAppConfig());
 				tweet_worker = new TweetWorker(user, driver_support, app_config, this);
 				try {
 					LOGGER.info(user.getUsername() + " is waiting web driver for 5 seconds");
 					Thread.sleep(Duration.ofSeconds(5).toMillis());
+					LOGGER.info("APP is trying to login for " + user.getUsername());
 					boolean loggedInOK = tweet_worker.loginTwitter();
 					if (!loggedInOK) {
 						cleanWebDriver(driver_support);
@@ -154,9 +158,21 @@ public class TweetManager {
 	public List<TweetWorker> getWorkerList() {
 		return workerList;
 	}
+
+	public boolean isWebDriverRestartRequired() {
+		return isWebDriverRestartRequired;
+	}
+
+	public void setWebDriverRestartRequired(boolean isWebDriverRestartRequired) {
+		this.isWebDriverRestartRequired = isWebDriverRestartRequired;
+	}
+
+	public void stopProgram() {
+		new ShutDownHook().start();
+	}
 	
-	public void killProcess() {
-		new ShutDownHook().start();;
+	public void quitWebDriver() {
+		new ShutDownHook().killProcess();
 	}
 }
 
@@ -165,20 +181,23 @@ class ShutDownHook extends Thread {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ShutDownHook.class);
 	public void killProcess () {
 		try {
-			LOGGER.info("Web Driver will be closed soon.");
-//			for (WebDriverSupporter driver_support : TweetManager.DRIVER_SUPPORTER_LIST) {
-//				driver_support.getTelegramDriver().close();
-//				driver_support.getTelegramDriver().quit();
-//				driver_support.getTwitterDriver().close();
-//				driver_support.getTwitterDriver().quit();
-//			}
-//			Thread.sleep(1000 * 5);
+			LOGGER.info("Web Drivers will be closed soon.");
+			for (WebDriverSupporter driver_support : TweetManager.DRIVER_SUPPORTER_LIST) {
+				driver_support.getTelegramDriver().close();
+				driver_support.getTelegramDriver().quit();
+				driver_support.getTwitterDriver().close();
+				driver_support.getTwitterDriver().quit();
+			}
+			LOGGER.info("Web Drivers closing was completed");
+			Thread.sleep(Duration.ofSeconds(7).toMillis());
 			TweetManager.DRIVER_SUPPORTER_LIST.clear();
+			LOGGER.info("Web Browsers will be closed soon.");
 			Runtime.getRuntime().exec("taskkill /f /im chromedriver.exe /T");
 			Runtime.getRuntime().exec("taskkill /f /im chrome.exe /T");
 			Runtime.getRuntime().exec("taskkill /f /im geckodriver.exe /T");
 			Runtime.getRuntime().exec("taskkill /f /im firefox.exe /T");
-			LOGGER.info("Web Driver closing is Done.");
+			Thread.sleep(Duration.ofSeconds(3).toMillis());
+			LOGGER.info("Web Browsers closing was completed");
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage());
 		}

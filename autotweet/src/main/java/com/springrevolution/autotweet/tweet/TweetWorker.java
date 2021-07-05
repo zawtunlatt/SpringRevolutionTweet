@@ -30,6 +30,10 @@ import com.springrevolution.autotweet.data.TwitterUser;
 import com.springrevolution.autotweet.support.Helper;
 import com.springrevolution.autotweet.support.WebDriverSupporter;
 
+import oshi.SystemInfo;
+import oshi.hardware.GlobalMemory;
+import oshi.hardware.HardwareAbstractionLayer;
+
 public class TweetWorker {
 	private static final Logger LOGGER = LoggerFactory.getLogger(TweetWorker.class);
 	public static final Random RANDOM = new Random();
@@ -50,8 +54,10 @@ public class TweetWorker {
 	private WebDriverSupporter driverSupport;
 	private TweetedURLConfig tweeted_config = new TweetedURLConfig();
 	private File tweeted_record_file;
-
+	private TweetManager manager;
+	
 	private boolean isLoggedIn = false;
+	
 
 	public TweetWorker(TwitterUser user, WebDriverSupporter driver_support, Configuration app_config,
 			TweetManager manager) {
@@ -61,6 +67,7 @@ public class TweetWorker {
 		this.wait = driver_support.getTwitterWait();
 		this.app_config = app_config;
 		history_list = user.getUserConfig().getLastTweetHistory();
+		this.manager = manager;
 	}
 
 	private void closeCookieRequest() {
@@ -78,6 +85,7 @@ public class TweetWorker {
 			LOGGER.info("Close button found and clicked");
 			Thread.sleep(Duration.ofMillis(1500).toMillis());
 		} catch (Exception e) {
+			LOGGER.info("Cookie Request Notification bar is not found");
 			LOGGER.error(e.getMessage());
 		}
 	}
@@ -292,6 +300,13 @@ public class TweetWorker {
 			if (handleShutdownSignal()) {
 				return;
 			}
+			
+			if (manager.isWebDriverRestartRequired() || detectMemoryProblem()) {
+				manager.setWebDriverRestartRequired(true);
+				LOGGER.warn("Memory Problem is detected. by " + user.getUsername());
+				return;
+			}
+			
 			if (waiting_required) {
 				int delay = 90 + RANDOM.nextInt(90); // Wait at least 90 seconds to avoid twitter account suspending or
 				// temporary limiting some features.
@@ -328,6 +343,26 @@ public class TweetWorker {
 			index++;
 			waiting_required = true;
 		}
+	}
+	
+	private boolean detectMemoryProblem() {
+		SystemInfo si = new SystemInfo();
+		HardwareAbstractionLayer hal = si.getHardware();
+		GlobalMemory memory = hal.getMemory();
+		double totalMemoryMB = memory.getTotal()/(1024*1024);
+		double availableMemoryMB = memory.getAvailable()/(1024*1024);
+		
+		LOGGER.info("System Total Memory is " + totalMemoryMB + " MB");
+		LOGGER.info("Available Memory is " + availableMemoryMB + " MB");
+		
+		if (availableMemoryMB < 700.0) {
+			return true;
+		}
+		double freeMemoryPercent = ((availableMemoryMB/totalMemoryMB) * 100.0);
+		if (freeMemoryPercent < 8) {
+			return true;
+		}
+		return false;
 	}
 
 	private String formatInfo(String info) {

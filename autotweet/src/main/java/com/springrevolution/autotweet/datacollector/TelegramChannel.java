@@ -19,7 +19,6 @@ import com.springrevolution.autotweet.config.ChannelConfig;
 import com.springrevolution.autotweet.data.PostData;
 import com.springrevolution.autotweet.support.Helper;
 import com.springrevolution.autotweet.support.WebDriverSupporter;
-import com.springrevolution.autotweet.tweet.TweetWorker;
 
 public class TelegramChannel {
 	private static final Logger LOGGER = LoggerFactory.getLogger(TelegramChannel.class);
@@ -96,7 +95,7 @@ public class TelegramChannel {
 		try {
 			text = URLEncoder.encode(text, StandardCharsets.UTF_8.toString());
 		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
+			LOGGER.error(e.getMessage());
 		}
 		return text;
 	}

@@ -1,6 +1,5 @@
 package com.springrevolution.autotweet.support;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DateFormat;
@@ -16,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 import com.springrevolution.autotweet.config.Configuration;
-import com.springrevolution.autotweet.tweet.TweetWorker;
 
 public class Helper {
 	private static Map<String, String> monthMap = new HashMap<>();
@@ -70,64 +68,10 @@ public class Helper {
 		    yaml.dump(app_config, fw);
 		    fw.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOGGER.error(e.getMessage());
 		}
 	    LOGGER.info("Configuration Updated.");
 	}
-	
-	public static void webDriverWait() {
-		
-	}
-	
-//	public static String getLastTweeted() {
-//		String log = "";
-//		if (!logFile.exists()) {
-//			return log;
-//		}
-//		Scanner sc = null;
-//	    try {
-//	    	sc = new Scanner(logFile);
-//	        sc.useDelimiter("\\Z");
-//	        log = sc.nextLine();
-//        	System.out.println("Log : " + log);
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-////			e.printStackTrace();
-//		} catch (Exception e) {
-////			e.printStackTrace();
-//		} finally {
-//			sc.close();
-//		}
-//	    return log;
-//	}
-//	
-//	public static TwitterUser getTweeterUser() {
-//        TwitterUser user = new TwitterUser();
-//		Scanner sc = null;
-//	    try {
-//	    	sc = new Scanner(twitter_user);
-//	        String user_name = sc.nextLine().trim();
-//	        String pass = sc.nextLine().trim();
-//	        user.setUsername(user_name);
-//	        user.setPassword(pass);
-//		} catch (IOException e) {
-//		} catch (Exception e) {
-//		} finally {
-//			sc.close();
-//		}
-//	    return user;
-//	}
-	
-//	public static void updateLog(String lastTweet) {
-//		try {
-//			logFile.delete();
-//			FileWriter myWriter = new FileWriter(logFile);
-//		    myWriter.write(lastTweet);
-//		    myWriter.close();
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}		
-//	}
 	
 //	public static void main(String[] args) {
 //		Date date = new Date();
