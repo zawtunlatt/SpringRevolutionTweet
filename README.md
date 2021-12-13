@@ -62,3 +62,7 @@ build.bat ကို Run ပြီး Compile လုပ်ပါ။
  - Configuration file supports
  - Command line options (may be 🥱)
  - GUI (may be 🥱)
+
+
+Please, check below link👇 how it works.
+https://www.linkedin.com/posts/zaw-tun-latt-394199167_java8-selenium-seleniumautomation-activity-6874353573015224320-KIS0
